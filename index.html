@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Document</title>
+</head>
+<style>
+    .chartWrapper {
+    position: relative;
+}
+
+.chartWrapper > canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events:none;
+}
+
+.chartAreaWrapper {
+    width: 600px;
+    overflow-x: scroll;
+}
+</style>
+<body>
+
+    <div id="chartContainer" style="height: 370px; width: 100%;"></div>
+    <div class="row">
+        <div  class="col s6 offset-s2">   <input style="width: 300px;" placeholder="profit percent" type="number" id="fname" name="fname" ><br>
+  
+            <input style="width: 300px;" placeholder="loss percent" type="number" id="lname" name="lname" ><br><br>
+            <input style="width: 300px;" placeholder="Higher EMA" type="number" id="uppergraph" name="lname" ><br><br>
+            <input style="width: 300px;" placeholder="Lower EMA" type="number" id="lowergraph" name="lname" ><br><br>
+            <input style="width: 300px;" placeholder="company name" type="text" id="company" name="lname" ><br><br>
+            <input type="submit" value="Submit" onclick="store()"></div>
+        <div class="col s4"><table class="striped" style="width: 300px;"><tr>
+            <td>profit</td>
+            <td id="prof"></td>
+        </tr>
+        <tr>
+            <td>Loss</td>
+            <td id="loss"></td>
+        </tr>
+        <tr>
+            <td>Final</td>
+            <td id="final"></td>
+        </tr>
+        </table></div>
+    </div>
+
+ 
+     
+   
+
+
+
+
+
+
+
+
+</div> 
+   
+    <script>
+
+let profit_percent;
+
+let loss_percent
+let lm
+let pm
+let a=[];
+let b=[];
+let pass_data;
+let uppergraph;
+let lowergraph;
+let company;
+function store(){
+
+    profit_percent= parseFloat(document.getElementById("fname").value);
+    loss_percent= parseFloat(document.getElementById("lname").value);
+    uppergraph= document.getElementById("uppergraph").value
+    lowergraph= document.getElementById("lowergraph").value
+    company= document.getElementById("company").value
+    pm=profit_percent*0.01;
+    lm=loss_percent*0.01;
+
+   
+    get_data().then(data=>{
+    pass_data=data;
+    draw_chart(pass_data);
+})
+
+}
+
+                async function get_data(){
+                    const EMA1= await fetch("https://www.alphavantage.co/query?function=EMA&symbol="+company+"&interval=15min&time_period="+uppergraph+"&series_type=open&apikey=70ZUUUGYESLGSZGG");
+               
+                   const data = await EMA1.json();
+console.log(data)
+                        const final = data["Technical Analysis: EMA"]
+                        const final2=[];
+                        for(const prop in final){
+                                    final2.push(final[prop].EMA)
+                        }
+                        
+                        const EMA2= await fetch("https://www.alphavantage.co/query?function=EMA&symbol="+company+"&interval=15min&time_period="+lowergraph+"&series_type=open&apikey=70ZUUUGYESLGSZGG");
+                        const data2 = await EMA2.json();
+                     
+                        const final3 = data2["Technical Analysis: EMA"]
+                        const final4=[];
+                        for(const prop in final3){
+                                    final4.push(final3[prop].EMA)
+                        }
+
+    
+                        let r={
+                            arr1:[],
+                            arr2:[]
+                        }
+                        r.arr1=final2;
+                        r.arr2=final4;
+
+               return r
+                }
+
+              
+
+               function draw_chart(data){
+                 
+           
+                    
+
+
+
+
+
+
+
+
+                       a =  data.arr1;   //200
+                      b =  data.arr2;   //50
+                        let br=false;
+                            let pr =0;
+                            let lo=0;
+                            let tp =0; 
+                            let lp
+                            let pp;
+                            let profs
+                            let loss
+                            let buy
+                      for(let i=0;i<a.length;i++){
+                         
+                          if(!br){
+                            if(b[i]>a[i]&&a[i-1]>b[i-1]){
+                            console.log(a[i])
+                            console.log(b[i])
+                            br=true;
+                                    buy = b[i];
+                            profs = pm*b[i];
+                             loss = lm*b[i];
+
+                            pp = parseFloat(b[i])+parseFloat(profs)  ;
+                            lp = parseFloat(b[i])-parseFloat(loss);
+                            console.log("loss:"+loss+"  prof: "+profs +",   "+"prof point :"+pp+"loss point:"+lp)
+
+
+
+
+                            
+
+                        }
+
+                          }
+                      
+                      
+                        if(parseFloat(b[i])>=pp&&br==true){
+    console.log("the selling price is :"+b[i]);
+    let fp=b[i]-buy;
+    console.log("ear profit : " +pr)
+    pr=pr+fp;
+    console.log("total profit : " +pr)
+    br=false;
+ 
+}
+
+if(parseFloat(b[i])<=lp&&br==true){
+    console.log("the loss price is :"+b[i]);
+    let fl=buy-b[i];
+    lo=lo+fl;
+    console.log("total loss : " +lo)
+    br=false;
+ 
+}
+       
+if(i==a.length-1){
+    console.log("total profit:    "+pr);
+    console.log("total loss:    "+lo);
+    let subs = pr-lo;
+    console.log("final:    "+subs);
+        
+let warning = subs>0?" (profit !!) ":" ( Loss ) "
+        document.getElementById("prof").innerHTML = pr;
+document.getElementById("loss").innerHTML =lo;
+document.getElementById("final").innerHTML=subs +warning
+}
+                 }
+
+
+
+                      console.log(a)
+                      console.log(a.length)
+                      var limit = 50000;
+    
+var data = [];
+var dataSeries = { type: "line" ,showInLegend: true,name:String(uppergraph)};
+var dataSeries2 = { type: "line" ,showInLegend: true,name:"50"};
+var dataPoints = [];
+var dataPoints2 = [];
+
+for (var i = 0; i < 688; i += 1) {
+
+	dataPoints.push({
+		x: i,
+		y: parseFloat(a[i])
+    });
+    console.log();
+}
+
+dataSeries.dataPoints = dataPoints;
+
+
+
+
+
+for (var i = 0; i < 688; i += 1) {
+
+dataPoints2.push({
+    x: i,
+    y: parseFloat(b[i])
+});
+
+}
+console.log(typeof(dataPoints));
+console.log(typeof(a))
+console.log(dataSeries)
+dataSeries2.dataPoints = dataPoints2;
+
+data.push(dataSeries);
+data.push(dataSeries2);
+//Better to construct options first and then pass it as a parameter
+var option = {
+    legend: {
+		cursor: "pointer",
+		verticalAlign: "top",
+		horizontalAlign: "center",
+		dockInsidePlotArea: true,
+	
+	},
+	zoomEnabled: true,
+	animationEnabled: true,
+	title: {
+		text: "EMA GRAPH OF "+company+" for "+ uppergraph+" AND "+lowergraph +" "
+	},
+	axisY: {
+		lineThickness: 1
+	},
+    data: data// random data
+};
+
+var chart = new CanvasJS.Chart("chartContainer", option);
+
+chart.render();
+
+                }
+
+    </script>
+</body>
+</html> 
